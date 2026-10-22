@@ -1,0 +1,35 @@
+
+spring:
+  application:
+    name: signalops-core
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/signalops
+    username: admin
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: qwen3.5:4b
+        think: false
+        num-predict: 150
+        temperature: 0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+  endpoint:
+    health:
+      show-details: always
