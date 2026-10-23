@@ -4,8 +4,8 @@ spring:
     name: signalops-core
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/signalops
-    username: admin
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/signalops}
+    username: ${DB_USERNAME:admin}
     password: ${DB_PASSWORD}
 
   jpa:
@@ -17,7 +17,7 @@ spring:
 
   ai:
     ollama:
-      base-url: http://localhost:11434
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       chat:
         model: qwen3.5:4b
         think: false
@@ -32,4 +32,4 @@ management:
 
   endpoint:
     health:
-      show-details: always
+      show-details: never

@@ -2,6 +2,8 @@ package com.signalops.core.incident.controller;
 
 import com.signalops.core.incident.dto.CreateIncidentRequest;
 import com.signalops.core.incident.dto.TriageResultResponse;
+import com.signalops.core.incident.dto.UpdateIncidentStatusRequest;
+import com.signalops.core.incident.enums.IncidentStatus;
 import com.signalops.core.incident.service.TriageResultService;
 import com.signalops.core.incident.utils.IncidentRequestHasher;
 import com.signalops.core.incident.enums.Severity;
@@ -15,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -60,5 +63,32 @@ public class IncidentController {
         return TriageResultResponse.from(
                 triageResultService.getLatestForIncident(incidentId)
         );
+    }
+
+    @GetMapping("/{incidentId}")
+    public Incident getIncident(@PathVariable UUID incidentId) {
+        return incidentService.getIncident(incidentId);
+    }
+
+    @PatchMapping("/{incidentId}/status")
+    public Incident updateIncidentStatus(
+            @PathVariable UUID incidentId,
+            @Valid @RequestBody UpdateIncidentStatusRequest request
+    ) {
+        return incidentService.updateIncidentStatus(
+                incidentId,
+                request.status()
+        );
+    }
+
+    @GetMapping
+    public List<Incident> getAllIncidents(
+            @RequestParam(required = false) IncidentStatus status
+    ) {
+        if (status != null) {
+            return incidentService.getIncidentsByStatus(status);
+        }
+
+        return incidentService.getAllIncidents();
     }
 }

@@ -96,4 +96,31 @@ public class Incident {
         updatedAt = Instant.now();
     }
 
+    public void changeStatus(IncidentStatus newStatus) {
+        if (newStatus == null) {
+            throw new IllegalArgumentException("Status must not be null");
+        }
+
+        boolean validTransition = switch (this.status) {
+            case OPEN ->
+                    newStatus == IncidentStatus.ACKNOWLEDGED;
+            case ACKNOWLEDGED ->
+                    newStatus == IncidentStatus.INVESTIGATING
+                            || newStatus == IncidentStatus.RESOLVED;
+            case INVESTIGATING ->
+                    newStatus == IncidentStatus.ACKNOWLEDGED
+                            || newStatus == IncidentStatus.RESOLVED;
+            case RESOLVED -> false;
+        };
+
+        if (!validTransition) {
+            throw new IllegalStateException(
+                    "Invalid incident status transition: "
+                            + this.status + " -> " + newStatus
+            );
+        }
+
+        this.status = newStatus;
+    }
+
 }

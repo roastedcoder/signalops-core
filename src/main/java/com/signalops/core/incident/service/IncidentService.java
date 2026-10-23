@@ -1,5 +1,6 @@
 package com.signalops.core.incident.service;
 
+import com.signalops.core.incident.enums.IncidentStatus;
 import com.signalops.core.incident.model.IdempotencyRecord;
 import com.signalops.core.incident.model.Incident;
 import com.signalops.core.incident.model.OutboxEvent;
@@ -17,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.HashMap;
@@ -121,6 +123,49 @@ public class IncidentService {
                 .orElseThrow(() -> new IllegalStateException(
                         "Idempotency record references a missing incident"
                 ));
+    }
+
+    public Incident getIncident(UUID incidentId) {
+        return incidentRepository.findById(incidentId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Incident not found: " + incidentId
+                ));
+    }
+
+    public List<Incident> getAllIncidents() {
+        return incidentRepository.findAll(
+                org.springframework.data.domain.Sort
+                        .by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")
+        );
+    }
+
+    @Transactional
+    public Incident updateIncidentStatus(
+            UUID incidentId,
+            IncidentStatus newStatus
+    ) {
+        Incident incident = incidentRepository.findById(incidentId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Incident not found: " + incidentId
+                ));
+
+        try {
+            incident.changeStatus(newStatus);
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    e.getMessage()
+            );
+        }
+
+        return incident;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Incident> getIncidentsByStatus(IncidentStatus status) {
+        return incidentRepository.findByStatusOrderByCreatedAtDesc(status);
     }
 
     private static class DuplicateKeyRaceException extends RuntimeException {}
