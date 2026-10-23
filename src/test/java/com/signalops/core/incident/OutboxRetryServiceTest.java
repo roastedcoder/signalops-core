@@ -15,8 +15,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,12 +54,13 @@ class OutboxRetryServiceTest {
         when(outboxEventRepository.findByIdForUpdate(eventId))
                 .thenReturn(Optional.of(event));
 
-        outboxRetryService.handleFailure(
+        boolean retryScheduled = outboxRetryService.handleFailure(
                 eventId,
                 workerId,
                 "Simulated processing failure"
         );
 
+        assertFalse(retryScheduled);
         assertEquals(OutboxStatus.FAILED, event.getStatus());
         verify(outboxEventRepository).findByIdForUpdate(eventId);
     }
@@ -90,16 +90,22 @@ class OutboxRetryServiceTest {
 
         Instant beforeFailure = Instant.now();
 
-        outboxRetryService.handleFailure(
+        boolean retryScheduled = outboxRetryService.handleFailure(
                 eventId,
                 workerId,
                 "Simulated temporary failure"
         );
 
+        assertTrue(retryScheduled);
         assertEquals(OutboxStatus.PENDING, event.getStatus());
         assertEquals(1, event.getAttemptCount());
-        org.junit.jupiter.api.Assertions.assertTrue(
-                event.getNextAttemptAt().isAfter(beforeFailure)
+        assertTrue(event.getNextAttemptAt().isAfter(beforeFailure));
+        assertTrue(
+                !event.getNextAttemptAt().isBefore(beforeFailure.plusSeconds(2))
+                        && !event.getNextAttemptAt().isAfter(
+                        Instant.now().plusSeconds(3)
+                ),
+                "First retry should be scheduled approximately 2 seconds later"
         );
         verify(outboxEventRepository).findByIdForUpdate(eventId);
     }
@@ -179,5 +185,23 @@ class OutboxRetryServiceTest {
         assertEquals(workerId, event.getLockedBy());
     }
 
+    @Test
+    void throwsWhenOutboxEventDoesNotExist() {
+        UUID eventId = UUID.randomUUID();
+
+        when(outboxEventRepository.findByIdForUpdate(eventId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> outboxRetryService.handleFailure(
+                        eventId,
+                        "test-worker",
+                        "Simulated failure"
+                )
+        );
+
+        verify(outboxEventRepository).findByIdForUpdate(eventId);
+    }
 
 }
