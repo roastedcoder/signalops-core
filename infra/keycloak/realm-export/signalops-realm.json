@@ -1,0 +1,65 @@
+{
+  "realm": "signalops",
+  "enabled": true,
+  "displayName": "SignalOps Local",
+  "accessTokenLifespan": 300,
+  "roles": {
+    "realm": [
+      {
+        "name": "signalops-admin",
+        "description": "Local development administrator role"
+      },
+      {
+        "name": "signalops-operator",
+        "description": "Local development incident operator role"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "signalops-local",
+      "name": "SignalOps local test client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true
+    }
+  ],
+  "users": [
+    {
+      "username": "signalops-admin",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin@signalops.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "signalops-admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "signalops-admin"
+      ]
+    },
+    {
+      "username": "signalops-operator",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "operator@signalops.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "signalops-operator",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "signalops-operator"
+      ]
+    }
+  ]
+}
