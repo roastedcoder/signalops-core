@@ -23,6 +23,7 @@ The project is being built as a **modular monolith** with clear boundaries betwe
 - [API overview](#api-overview)
 - [Technology stack](#technology-stack)
 - [Run locally](#run-locally)
+- [Authentication (local Keycloak)](#authentication-local-keycloak)
 - [Configuration notes](#configuration-notes)
 - [Design decisions](#design-decisions)
 - [Roadmap](#roadmap)
@@ -379,6 +380,64 @@ The commands below assume you have Java, PostgreSQL, and Ollama installed and co
 5. Check the application health endpoint using the management path configured in the application.
 
 > Exact database credentials, model settings, and management endpoint exposure are configuration-dependent. Do not commit local secrets to the repository.
+
+## Authentication (local Keycloak)
+
+SignalOps acts as an OAuth2 resource server. Keycloak authenticates users and issues JWT access tokens; SignalOps validates the token signature, issuer, and time claims. The application does not store passwords or create login sessions.
+
+### Start the local identity provider
+
+Docker Compose starts a local Keycloak instance and imports the development-only `signalops` realm:
+
+```bash
+docker compose up -d
+```
+
+Keycloak is bound to `127.0.0.1:8180` and should remain local. The imported realm contains two demonstration users:
+
+| Username | Password | Realm role |
+|---|---|---|
+| `signalops-admin` | `signalops-admin` | `signalops-admin` |
+| `signalops-operator` | `signalops-operator` | `signalops-operator` |
+
+These credentials are intentionally disposable local-development credentials. Never reuse them outside a local environment.
+
+### Start SignalOps
+
+```bash
+SPRING_PROFILES_ACTIVE=local ./mvnw spring-boot:run
+```
+
+The resource server expects the issuer `http://localhost:8180/realms/signalops`. Override it with `KEYCLOAK_ISSUER_URI` in another environment.
+
+### Obtain a local access token
+
+For local smoke testing only, the imported public client enables the OAuth2 Resource Owner Password Credentials grant:
+
+```bash
+curl -X POST http://localhost:8180/realms/signalops/protocol/openid-connect/token \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "client_id=signalops-local" \\
+  -d "grant_type=password" \\
+  -d "username=signalops-operator" \\
+  -d "password=signalops-operator"
+```
+
+Copy the returned `access_token` and use it as a bearer token:
+
+```bash
+curl http://localhost:8080/api/v1/incidents \\
+  -H "Authorization: Bearer <access_token>"
+```
+
+The password grant is included only to make local CLI testing straightforward. Production user-facing clients should use Authorization Code with PKCE; service-to-service clients should use an appropriate confidential-client flow.
+
+### Current security boundary
+
+- `/actuator/health` is public for health probes.
+- All other routes require a valid bearer JWT.
+- This first authentication milestone does **not** yet enforce role-based permissions or tenant-level data isolation.
+- Do not expose the service or MCP endpoint publicly until authorization, tenant isolation, and production identity-provider configuration are completed.
 
 ## Configuration notes
 
