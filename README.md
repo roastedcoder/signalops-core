@@ -396,7 +396,7 @@ export KEYCLOAK_ADMIN_PASSWORD
 docker compose up -d
 ```
 
-Keycloak is bound to `127.0.0.1:8180`. The imported realm defines the local test client and roles, but intentionally does not import users or passwords.
+Keycloak is bound to `127.0.0.1:8180`. The imported realm defines the local test client and the `signalops-operator` and `signalops-admin` realm roles, but intentionally does not import users or passwords.
 
 Open the Keycloak Admin Console at `http://localhost:8180`, sign in with the bootstrap credentials, select the `signalops` realm, and create a local test user. Set a password in the Credentials tab and assign the `signalops-operator` realm role under Role mapping. Use a unique password that is not used anywhere else.
 
@@ -434,12 +434,20 @@ curl http://localhost:8080/api/v1/incidents \
 
 The password grant is included only to make local CLI testing straightforward. Production user-facing clients should use Authorization Code with PKCE; service-to-service clients should use an appropriate confidential-client flow.
 
+### Role-based authorization
+
+The resource server reads Keycloak's `realm_access.roles` claim and maps each realm role to a Spring Security authority (for example, `signalops-operator` becomes `ROLE_signalops-operator`). OAuth2 scope authorities are preserved.
+
+Protected routes, including REST and the MCP endpoint, require either the `signalops-operator` or `signalops-admin` realm role. Both roles currently have the same route access because the application does not yet contain separate administrator-only operations. A valid JWT without either role is authenticated but forbidden (HTTP 403).
+
 ### Current security boundary
 
 - `/actuator/health` is public for health probes.
-- All other routes require a valid bearer JWT.
-- This first authentication milestone does **not** yet enforce role-based permissions or tenant-level data isolation.
-- Do not expose the service or MCP endpoint publicly until authorization, tenant isolation, and production identity-provider configuration are completed.
+- All other routes require a valid bearer JWT containing at least one supported SignalOps realm role.
+- Keycloak realm roles in `realm_access.roles` are mapped to Spring authorities with the `ROLE_` prefix. OAuth2 scope authorities are retained.
+- `signalops-operator` and `signalops-admin` currently grant access to protected application and MCP routes. The application does not yet define separate admin-only operations.
+- This authentication/authorization milestone does **not** yet enforce tenant-level data isolation.
+- Do not expose the service or MCP endpoint publicly until tenant isolation and production identity-provider configuration are completed.
 
 ## Configuration notes
 
