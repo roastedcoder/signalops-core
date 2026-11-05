@@ -4,6 +4,11 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Local machine and generated files
+.DS_Store
+*.log
+/effective-pom.xml
+
 ### STS ###
 .apt_generated
 .classpath
