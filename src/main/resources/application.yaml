@@ -29,7 +29,7 @@ spring:
       chat:
         model: qwen3.5:4b
         think: false
-        num-predict: 150
+        num-predict: 512
         temperature: 0
 
     openai:
@@ -48,3 +48,7 @@ management:
   endpoint:
     health:
       show-details: never
+
+signalops:
+  agent:
+    debug: true

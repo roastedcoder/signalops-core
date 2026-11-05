@@ -11,6 +11,7 @@ CREATE TABLE application_logs (
 
     CONSTRAINT chk_application_logs_level
         CHECK (level IN ('TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR'))
+
 );
 
 CREATE INDEX idx_application_logs_service_time
