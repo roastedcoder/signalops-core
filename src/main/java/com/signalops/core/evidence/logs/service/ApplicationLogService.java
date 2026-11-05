@@ -106,6 +106,15 @@ public class ApplicationLogService {
                 .toList();
     }
 
+    public record LogEvidenceResult(
+            UUID incidentId,
+            List<LogEvidence> logs
+    ) {
+        public LogEvidenceResult {
+            logs = logs == null ? List.of() : List.copyOf(logs);
+        }
+    }
+
     public record LogEvidence(
             UUID id,
             String serviceName,
