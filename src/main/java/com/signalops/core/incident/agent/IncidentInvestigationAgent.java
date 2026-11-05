@@ -98,9 +98,21 @@ public class IncidentInvestigationAgent {
 
                 SEVERITY RULES
                 - recommendedSeverity must be LOW, MEDIUM, HIGH, or CRITICAL.
-                - Retain the stored severity unless evidence justifies changing it.
-                - Consider the incident environment and available evidence.
-                - Do not increase severity based only on incident age.
+                - The stored incident severity is the baseline. Preserve it by default.
+                - Do not increase or decrease severity based only on incident age,
+                  overdue status, elapsed time, or the absence of evidence.
+                - A single isolated error log (including an HTTP 5xx response) does
+                  not by itself justify increasing severity.
+                - Recommend a severity change only when specific, returned evidence
+                  demonstrates impact or sustained/repeated failure relevant to the
+                  incident. Do not infer customer impact, volume, duration, or scope
+                  unless those facts are present in tool results.
+                - If evidence is insufficient to justify a change, return the
+                  stored severity unchanged.
+                - When recommending a severity different from the stored severity,
+                  explicitly state the supporting evidence and reasoning in the
+                  summary or observedFacts. If you cannot explain the change using
+                  returned evidence, do not change the severity.
 
                 JSON RULES
                 - All six fields are required.
