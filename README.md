@@ -267,6 +267,40 @@ The investigation response is structured around:
 - Incident age or an absence of evidence alone should not justify increasing severity.
 - A severity recommendation should be supported by specific evidence; otherwise, the stored severity should be retained.
 
+## MCP server
+
+SignalOps can expose selected incident capabilities to MCP-compatible clients through a **Streamable HTTP MCP server**. The MCP adapter is a transport boundary: it delegates to the existing incident services, log-evidence service, and investigation agent rather than duplicating domain logic.
+
+### Exposed tools
+
+| MCP tool | Purpose | Access |
+|---|---|---|
+| `list_incidents` | List incidents, optionally filtered by status | Read-only |
+| `get_incident` | Retrieve stored incident details by UUID | Read-only |
+| `get_incident_logs` | Search bounded application-log evidence for an incident | Read-only |
+| `investigate_incident` | Run the existing AI investigation and return its structured report | Read-only |
+
+The log search retains the existing service/time-window/result-limit rules. The investigation tool invokes the existing LLM-backed agent; it does not create a second agent or mutate incident state.
+
+### Enable locally
+
+MCP is disabled by default. Start the application with the `local` Spring profile to enable the Streamable HTTP transport:
+
+```bash
+SPRING_PROFILES_ACTIVE=local ./mvnw spring-boot:run
+```
+
+The MCP endpoint uses Spring AI's default `/mcp` path unless changed by configuration. Configure your MCP client to connect to `http://localhost:8080/mcp` when the application is running on its default port.
+
+**Security:** Spring AI's HTTP MCP transport does not add authentication by itself. Keep this endpoint bound to a trusted local environment for this initial implementation. Do not expose it to a public network until authentication and authorization are added.
+
+### Design boundary
+
+- REST remains the primary application API.
+- MCP tools are thin adapters over existing application services.
+- Only read operations are exposed; no status update, incident creation, replay, or remediation tool is registered.
+- Tool arguments are validated at the adapter boundary and domain-level not-found behavior is delegated to existing services.
+
 ## Incident lifecycle
 
 The incident model currently includes these statuses:
