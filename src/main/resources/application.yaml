@@ -15,6 +15,10 @@ spring:
     enabled: true
 
   ai:
+    mcp:
+      server:
+        # MCP is opt-in so deployed environments do not expose an unauthenticated endpoint by default.
+        enabled: ${SIGNALOPS_MCP_ENABLED:false}
     model:
       chat: ollama
       audio:
