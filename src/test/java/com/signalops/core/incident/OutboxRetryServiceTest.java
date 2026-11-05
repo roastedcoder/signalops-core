@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -202,6 +203,40 @@ class OutboxRetryServiceTest {
         );
 
         verify(outboxEventRepository).findByIdForUpdate(eventId);
+    }
+
+    @Test
+    void shouldScheduleRetryWhenWorkerOwnsValidLease() {
+        // Arrange
+        UUID eventId = UUID.randomUUID();
+        String workerId = "worker-1";
+        String errorMessage = "Temporary provider failure";
+
+        OutboxEvent event = new OutboxEvent(
+                eventId,
+                UUID.randomUUID(),
+                "INCIDENT_TRIAGE",
+                Map.of("incidentId", "incident-1")
+        );
+
+        event.markProcessing(workerId, Instant.now().plusSeconds(60));
+
+        when(outboxEventRepository.findByIdForUpdate(eventId))
+                .thenReturn(Optional.of(event));
+
+        // Act
+        boolean retryScheduled = outboxRetryService.handleFailure(
+                eventId, workerId, errorMessage
+        );
+
+        // Assert
+        assertTrue(retryScheduled);
+        assertEquals(OutboxStatus.PENDING, event.getStatus());
+        assertEquals(errorMessage, event.getLastError());
+        assertNull(event.getLockedBy());
+        assertNull(event.getLockedUntil());
+
+        assertTrue(event.getNextAttemptAt().isAfter(Instant.now()));
     }
 
 }
