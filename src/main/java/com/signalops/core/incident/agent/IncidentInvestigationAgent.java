@@ -115,7 +115,7 @@ public class IncidentInvestigationAgent {
 
                 Produce the JSON report using:
                 - summary: concise current situation
-                - observedFacts: maximum 5 facts supported by tool data
+                - observedFacts: maximum 5 facts supported by incident or application-log tool data
                 - hypotheses: maximum 2 plausible but unverified explanations
                 - evidenceGaps: maximum 2 important missing pieces of evidence
                 - recommendedSeverity: LOW, MEDIUM, HIGH, or CRITICAL
